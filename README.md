@@ -13,6 +13,7 @@
 
 
 	@PrefModel(value = "cat")
+	
 	public interface Cat {
 	    String YEAR = "year";
 	    String NAME = "name";
