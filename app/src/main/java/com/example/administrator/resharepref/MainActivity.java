@@ -31,4 +31,10 @@ public class MainActivity extends AppCompatActivity {
         cat.setName("小狗");
         textView.setText(cat.getName() + " : " + cat.getYear() + "岁");
     }
+
+    public void click2(View view) {
+        Cat cat = ReSharePref.getInstance().create(Cat.class);
+        cat.setCat("小猪",8);
+        textView.setText(cat.getName() + " : " + cat.getYear() + "岁");
+    }
 }

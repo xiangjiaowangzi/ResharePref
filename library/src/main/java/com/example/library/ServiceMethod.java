@@ -1,9 +1,9 @@
 package com.example.library;
 
 import android.support.annotation.IntDef;
-import android.text.InputFilter;
 import android.text.TextUtils;
 
+import com.example.library.annotations.PrefBody;
 import com.example.library.annotations.PrefGet;
 import com.example.library.annotations.PrefPut;
 
@@ -11,7 +11,6 @@ import java.lang.annotation.Annotation;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.reflect.Method;
-import java.lang.reflect.Type;
 
 /**
  * Created by Lbin on 2017/10/24.
@@ -19,11 +18,12 @@ import java.lang.reflect.Type;
 
 public class ServiceMethod {
 
+    private static final int NONE = 0;
     private static final int PUT = 1;
     private static final int GET = 2;
 
     @Retention(RetentionPolicy.SOURCE)
-    @IntDef({PUT, GET})
+    @IntDef({NONE, PUT, GET})
     public @interface TYPE {
     }
 
@@ -36,6 +36,11 @@ public class ServiceMethod {
      * key值
      */
     private String mKey;
+
+    /**
+     * 参数key值
+     */
+    private String[] parmeterKeys;
 
     /**
      * 类型
@@ -51,10 +56,7 @@ public class ServiceMethod {
         this.mKey = builder.key;
         this.mType = builder.type;
         this.mReturnType = builder.returnType;
-//        Utils.log(" prefName " + prefName);
-//        Utils.log(" mKey " + mKey);
-//        Utils.log(" mType " + mType);
-//        Utils.log(" mReturnType " + mReturnType.getCanonicalName());
+        this.parmeterKeys = builder.parmeterKeys;
     }
 
     public Object invokerMethod(Object[] args) {
@@ -68,29 +70,33 @@ public class ServiceMethod {
     }
 
     private Object parsePutMethod(Object[] args) {
-//        Utils.log("PUT");
+        if (parmeterKeys.length != args.length) {
+            throw new ArrayIndexOutOfBoundsException("the length is different ");
+        }
         SharePrefence prefence = ReSharePref.getInstance().getSharedPrefence(prefName);
+        prefence.beginTransaction();
         boolean success = false;
+        int i = 0;
         for (Object o : args) {
             if (o instanceof Integer) {
-                success = prefence.putInt(mKey, (int) o).commit();
+                prefence.putInt(parmeterKeys[i++], (int) o);
             } else if (o instanceof String) {
-                success = prefence.putString(mKey, (String) o).commit();
+                prefence.putString(parmeterKeys[i++], (String) o);
             } else if (o instanceof Long) {
-                success = prefence.putLong(mKey, (Long) o).commit();
+                prefence.putLong(parmeterKeys[i++], (Long) o);
             } else if (o instanceof Float) {
-                success = prefence.putFloat(mKey, (Float) o).commit();
+                prefence.putFloat(parmeterKeys[i++], (Float) o);
             } else if (o instanceof Boolean) {
-                success = prefence.putBoolean(mKey, (Boolean) o).commit();
+                prefence.putBoolean(parmeterKeys[i++], (Boolean) o);
             } else {
-                success = prefence.putString(mKey, o.toString()).commit();
+                prefence.putString(parmeterKeys[i++], o.toString());
             }
+            success = prefence.commit();
         }
         return success;
     }
 
     private Object parseGetMethod(Object[] args) {
-//        Utils.log("GET");
         SharePrefence prefence = ReSharePref.getInstance().getSharedPrefence(prefName);
         switch (mReturnType.getCanonicalName()) {
             case "int":
@@ -111,20 +117,29 @@ public class ServiceMethod {
         final Method method;
         final String prefName;
         final Annotation[] methodAnnotations;
-        private int type = 1;
+        final Annotation[][] parmeterAnnotations;
+        String[] parmeterKeys;
+        final Class<?> returnType;
+        private int type = NONE;
         String key;
-        Class<?> returnType;
 
         public Builder(String prefName, Method method) {
             this.prefName = prefName;
             this.method = method;
             this.methodAnnotations = method.getAnnotations();
             this.returnType = method.getReturnType();
+            this.parmeterAnnotations = method.getParameterAnnotations();
         }
 
         public ServiceMethod build() {
             for (Annotation annotation : methodAnnotations) {
                 parseMethodAnnotation(annotation);
+            }
+            if (type == PUT) {
+                if (parmeterAnnotations.length < 0) {
+                    throw new NullPointerException(" the parmeterAnnotation is null , please check the code !!!");
+                }
+                parseParmeterAnnotation();
             }
             return new ServiceMethod(this);
         }
@@ -138,12 +153,23 @@ public class ServiceMethod {
                 this.key = key;
                 type = GET;
             } else if (annotation instanceof PrefPut) {
-                String key = ((PrefPut) annotation).value();
-                if (TextUtils.isEmpty(key)) {
-                    throw new NullPointerException(" the key is null , please check the code !!!");
-                }
-                this.key = key;
                 type = PUT;
+            }
+        }
+
+        private void parseParmeterAnnotation() {
+            parmeterKeys = new String[parmeterAnnotations.length];
+            int i = 0;
+            for (Annotation[] as : parmeterAnnotations) {
+                for (Annotation a : as) {
+                    if (a instanceof PrefBody) {
+                        String value = ((PrefBody) a).value();
+                        if (TextUtils.isEmpty(value)){
+                            throw new NullPointerException(" the permater key is null , please check the code !!!");
+                        }
+                        parmeterKeys[i++] = value;
+                    }
+                }
             }
         }
     }
