@@ -11,16 +11,27 @@
     tools:context="com.example.administrator.resharepref.MainActivity">
 
     <TextView
+        android:id="@+id/text"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Hello World!" />
 
     <Button
+        android:id="@+id/btn1"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_centerInParent="true"
-        android:text="测试"
+        android:text="插入一条12岁的小猫"
         android:onClick="click"
+        />
+
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/btn1"
+        android:layout_centerInParent="true"
+        android:text="插入一条20岁的小狗"
+        android:onClick="click1"
         />
 
 </RelativeLayout>

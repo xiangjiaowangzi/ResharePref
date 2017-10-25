@@ -9,9 +9,12 @@ import com.example.library.ReSharePref;
  */
 
 public class MyApp extends Application {
+
+    public static final String SIMPLEPREF_NAME = "resharepref";
+
     @Override
     public void onCreate() {
         super.onCreate();
-        ReSharePref.getInstance().init(this);
+        ReSharePref.getInstance().init(this , SIMPLEPREF_NAME);
     }
 }

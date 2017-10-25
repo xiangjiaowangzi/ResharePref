@@ -12,11 +12,19 @@ import com.example.library.annotations.PrefPut;
 public interface Cat {
 
     String YEAR = "year";
+    String NAME = "name";
 
-    @PrefPut(value = YEAR)
-    boolean setYear(String year);
+    @PrefPut(YEAR)
+    boolean setYear(int year);
 
-    @PrefGet(value = YEAR)
-    boolean getYear();
+    @PrefGet(YEAR)
+    int getYear();
+
+    @PrefPut(NAME)
+    boolean setName(String name);
+
+    @PrefGet(NAME)
+    String getName();
+
 
 }

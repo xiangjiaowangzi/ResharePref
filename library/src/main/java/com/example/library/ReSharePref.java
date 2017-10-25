@@ -2,6 +2,7 @@ package com.example.library;
 
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.os.Build;
 import android.text.TextUtils;
 
 import com.example.library.annotations.PrefGet;
@@ -22,6 +23,7 @@ import java.util.Objects;
 public class ReSharePref {
 
     private Context mContext;
+    private String mSimpleName;
 
     private static volatile ReSharePref instance;
 
@@ -38,8 +40,13 @@ public class ReSharePref {
         return instance;
     }
 
-    public void init(Context context) {
+    public void init(Context context, String simpleName) {
         mContext = context;
+        mSimpleName = simpleName;
+    }
+
+    public String getSimpleName() {
+        return mSimpleName;
     }
 
     public <T> T create(final Class<T> pref) {
@@ -49,15 +56,14 @@ public class ReSharePref {
             throw new IllegalArgumentException("class must be interfaces and annotation must be PrefModel.class");
         }
         final String eraxName = pref.getAnnotation(PrefModel.class).value();
-        final String prefName = pref.getCanonicalName() + eraxName;
-        initServiceMethod(pref, prefName);
+        final String prefName = mSimpleName + pref.getSimpleName() + eraxName;
+//        initServiceMethod(pref, prefName);
         return (T) Proxy.newProxyInstance(pref.getClassLoader(), new Class[]{pref}
                 , new InvocationHandler() {
                     @Override
                     public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
-                        ServiceMethod result = loadServiceMethod(prefName , method);
+                        ServiceMethod result = loadServiceMethod(prefName, method);
                         return result.invokerMethod(args);
-//                        return null;
                     }
                 });
     }
@@ -66,6 +72,10 @@ public class ReSharePref {
         for (Method method : pref.getDeclaredMethods()) {
             loadServiceMethod(prefName, method);
         }
+    }
+
+    public SharePrefence getSharedPrefence(String prefname) {
+        return new SharePrefence(prefname, mContext);
     }
 
     private ServiceMethod loadServiceMethod(String prefName, Method method) {
